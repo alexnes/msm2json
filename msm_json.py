@@ -6,6 +6,14 @@ import json
 import datetime
 import tarfile
 from os import remove
+from dictdiffer import DictDiffer
+from paramiko import SSHClient, AutoAddPolicy
+from scp import SCPClient
+
+def debug_message(message):
+	# converts the message to log-like format
+	now_time = datetime.datetime.now()	
+	return "%s\t %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), message)			
 
 def get_data(file_path, debug = False):
 	# Получить из файла список словарей {"par":{"id":<id>, "prop":<prop>}, "val":<val>}. Разные элементы списка могут иметь одинаковое значение ["par"]["id"]
@@ -175,15 +183,74 @@ def dump_compressed_db(db, filename, dbname="db.json", debug=False):
 		now_time = datetime.datetime.now()
 		print "%s\t DUMP_C: done." % (now_time.strftime("%d.%m.%Y %H:%M.%S"))		
 
+def get_file(remote_file, local_path, ip, username, password, debug=False):
+	# Получает с удаленной машины файл remote_file с помощью scp и сохраняет его в local_path.
+	if local_path[len(local_path) - 1] != '/': local_path += '/'
+	ssh = SSHClient()
+	ssh.set_missing_host_key_policy(AutoAddPolicy())
+	ssh.load_system_host_keys()
+	if debug:
+		now_time = datetime.datetime.now()
+		print "%s\t SCP: connecting to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), ip)	
+	try:
+		ssh.connect(ip, username=username, password=password)
+	except:
+		if debug:
+			now_time = datetime.datetime.now()
+			print "%s\t SCP: failed to connect to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), ip)			
+	else:
+		if debug:
+			now_time = datetime.datetime.now()
+			print "%s\t SCP: connected to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), ip)					
+	try:
+		if debug:
+			now_time = datetime.datetime.now()
+			print "%s\t SCP: retrieving file %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), remote_file)					
+		scp = SCPClient(ssh.get_transport())
+		scp.get(remote_file, local_path)
+	except:
+		if debug:
+			now_time = datetime.datetime.now()
+			print "%s\t SCP: error: failed to retrieve file %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), remote_file)							
+	else:
+		if debug:
+			now_time = datetime.datetime.now()
+			print "%s\t SCP: file saved to %s folder" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), local_path)							
+	ssh.close()		
+
 if __name__ == '__main__':
 
-	data1 = get_complete_db("/home/alex/ZDOS/C/saved", source="file")
-	dump_db(data1, "db1.json")
-	data2 = get_complete_db("db2.json", source="json")
-	dump_compressed_db(data2, "db2.tar.bz2", "db2.json")
-	diff2 = getdiff(data2, data1)
-	dump_db(diff2, "diff2-1.json")
+	#data1 = get_complete_db("/home/alex/ZDOS/C/saved", source="file")
+	#dump_db(data1, "db1.json")
+	#data2 = get_complete_db("db2.json", source="json")
+	#dump_compressed_db(data2, "db2.tar.bz2", "db2.json")
+	#diff2 = getdiff(data2, data1)
+	#dump_db(diff2, "diff2-1.json")
 
-	compress("diff.tar.bz2", ["diff2-1.json"])
-	extract("diff.tar.bz2", "saved/")
+	#compress("diff.tar.bz2", ["diff2-1.json"])
+	#extract("diff.tar.bz2", "saved/")
 
+	#data = {}
+	#for i in xrange(0,4):
+	#	data[i] = get_complete_db("/home/alex/ZDOS/C/saved%d" % (i), source="file", debug=True)
+	#	dump_db(data[i], "db%02d.json" % (i), debug=True)
+
+	get_file("/home/admmsm/146200.tar", "saved", "192.168.20.2", "admmsm", "msm-bus", debug=True)
+
+
+'''	d = DictDiffer(data2, data1)
+	for i in d.changed():
+		a = DictDiffer(data2[i], data1[i])
+		for p in a.changed():
+			b = DictDiffer(data2[i][p], data1[i][p])
+			print i, p, b.changed()
+
+	for gl in data1:
+		for id1 in data1[gl]:
+			if data2[gl].get(id1) != None:
+				if data1[gl][id1] != data2[gl][id1]:
+					print "==========================================="
+					print gl, id1
+					for prop in data1[gl][id1]:
+						if data1[gl][id1][prop].encode('utf-8') != data2[gl][id1][prop].encode('utf-8'):
+							print prop, data1[gl][id1][prop].encode('utf-8'), data1[gl][id1][prop].encode('utf-8')'''
