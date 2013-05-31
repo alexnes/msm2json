@@ -13,7 +13,7 @@ from scp import SCPClient
 def debug_message(message):
 	# converts the message to log-like format
 	now_time = datetime.datetime.now()	
-	return "%s\t %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), message)			
+	return "%s\t %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), message)	
 
 def get_data(file_path, debug = False):
 	# Получить из файла список словарей {"par":{"id":<id>, "prop":<prop>}, "val":<val>}. Разные элементы списка могут иметь одинаковое значение ["par"]["id"]
@@ -96,31 +96,21 @@ def get_complete_db(
 	if source.upper() == "FILE":
 		if path[len(path) - 1] != '/': path += '/'
 		for g in msm_globals:
-			if debug:
-				now_time = datetime.datetime.now()
-				print "%s\t READ: processing file: %s%s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), path, g)
+			if debug: print debug_message("READ: processing file: %s%s" % (path, g))
 			data[g]= get_db(path + g)
 	elif source.upper() == "JSON":
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t READ: processing file: %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), path)		
+		if debug: print debug_message("READ: processing file: %s" % (path))
 		with open(path) as f:
 		    data = json.load(f)	
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t READ: done." % (now_time.strftime("%d.%m.%Y %H:%M.%S"))		    
+	if debug: print debug_message("READ: done.")
 	return data
 
 def dump_db(db, filename, debug=False):
 	# Сохраняет словарь db в файл filename в формате JSONю
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t DUMP: processing file: %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), filename)		
+	if debug: print debug_message("DUMP: processing file: %s" % (filename))
 	with open(filename, 'w') as f:
 		json.dump(db, f)	
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t DUMP: done." % (now_time.strftime("%d.%m.%Y %H:%M.%S"))		
+	if debug: print debug_message("DUMP: done.")
 
 def getdiff(db2, db1):
 	# Возвращает словарь с такой же структурой, как и у db1 и db2. Словарь содержит записи, которые есть в db2 и отсутствуют в db1.
@@ -141,47 +131,31 @@ def compress(archive=None, files=None, debug=False):
 	if archive == None or files == None: pass
 	tar = tarfile.open(archive, "w:bz2")
 	for name in files:
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t COMPRESS: processing file: %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), name)
+		if debug: print debug_message("COMPRESS: processing file: %s" % (name))
 		tar.add(name)
 	tar.close()	
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t COMPRESS: %s done" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), archive)
+	if debug: print debug_message("COMPRESS: %s done" % (archive))
 
 def extract(archive=None, path=".", debug=False):
 	# Извлекает все файлы из архива archive в каталог path
 	if archive == None: pass
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t EXTRACT: processing file: %s to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), archive, path)	
+	if debug: print debug_message("EXTRACT: processing file: %s to %s" % (archive, path))
 	tar = tarfile.open(archive, "r:bz2")
 	tar.extractall(path)
 	tar.close()		
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t EXTRACT: %s done." % (now_time.strftime("%d.%m.%Y %H:%M.%S"), archive)		
+	if debug: print debug_message("EXTRACT: %s done." % (archive))
 
 def dump_compressed_db(db, filename, dbname="db.json", debug=False):
 	# Сохраняет словарь db в сжатый tar.bz2 файл filename в формате JSON.
 	dbname = "/tmp/" + dbname
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t DUMP_C: processing file: %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), dbname)		
+	if debug: print debug_message("DUMP_C: processing file: %s" % (dbname))
 	with open(dbname, 'w') as f:
 		json.dump(db, f)	
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t DUMP_C: compressing dump: %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), filename)
+	if debug: print debug_message("DUMP_C: compressing dump: %s" % (filename))
 	compress(filename, [dbname])
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t DUMP_C: removing temporary %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), dbname)		
+	if debug: print debug_message("DUMP_C: removing temporary %s" % (dbname))	
 	remove(dbname)
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t DUMP_C: done." % (now_time.strftime("%d.%m.%Y %H:%M.%S"))		
+	if debug: print debug_message("DUMP_C: done.")
 
 def get_file(remote_file, local_path, ip, username, password, debug=False):
 	# Получает с удаленной машины файл remote_file с помощью scp и сохраняет его в local_path.
@@ -189,53 +163,43 @@ def get_file(remote_file, local_path, ip, username, password, debug=False):
 	ssh = SSHClient()
 	ssh.set_missing_host_key_policy(AutoAddPolicy())
 	ssh.load_system_host_keys()
-	if debug:
-		now_time = datetime.datetime.now()
-		print "%s\t SCP: connecting to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), ip)	
+	if debug: print debug_message("SCP: connecting to %s" % (ip))
 	try:
 		ssh.connect(ip, username=username, password=password)
 	except:
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t SCP: failed to connect to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), ip)			
+		if debug: print debug_message("SCP: failed to connect to %s" % (ip))
 	else:
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t SCP: connected to %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), ip)					
+		if debug: print debug_message("SCP: connected to %s" % (ip))
 	try:
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t SCP: retrieving file %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), remote_file)					
+		if debug: print debug_message("SCP: retrieving file %s" % (remote_file))
 		scp = SCPClient(ssh.get_transport())
 		scp.get(remote_file, local_path)
 	except:
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t SCP: error: failed to retrieve file %s" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), remote_file)							
+		if debug: print debug_message("SCP: error: failed to retrieve file %s" % (remote_file))
 	else:
-		if debug:
-			now_time = datetime.datetime.now()
-			print "%s\t SCP: file saved to %s folder" % (now_time.strftime("%d.%m.%Y %H:%M.%S"), local_path)							
+		if debug: print debug_message("SCP: file saved to %s folder" % (local_path))
 	ssh.close()		
 
 if __name__ == '__main__':
 
-	#data1 = get_complete_db("/home/alex/ZDOS/C/saved", source="file")
-	#dump_db(data1, "db1.json")
-	#data2 = get_complete_db("db2.json", source="json")
-	#dump_compressed_db(data2, "db2.tar.bz2", "db2.json")
+	#data1 = get_complete_db("/home/alex/ZDOS/C/savedm", source="file", debug=True)
+	#dump_db(data1, "dbm.json", debug=True)
+	#data2 = get_complete_db("db02.json", source="json", debug=True)
+	#dump_compressed_db(data2, "saved/db02.tar.bz2", "db2.json", debug=True)
 	#diff2 = getdiff(data2, data1)
-	#dump_db(diff2, "diff2-1.json")
-
-	#compress("diff.tar.bz2", ["diff2-1.json"])
-	#extract("diff.tar.bz2", "saved/")
+	#dump_db(diff2, "diff2-1.json", debug=True)
+	#compress("dbm.tar.bz2", ["dbm.json"], debug=True)
+	#extract("diff.tar.bz2", "saved/", debug=True)
+	#get_file("/home/admmsm/146200.tar", "saved", "192.168.20.2", "admmsm", "msm-bus", debug=True)
 
 	#data = {}
 	#for i in xrange(0,4):
 	#	data[i] = get_complete_db("/home/alex/ZDOS/C/saved%d" % (i), source="file", debug=True)
 	#	dump_db(data[i], "db%02d.json" % (i), debug=True)
 
-	get_file("/home/admmsm/146200.tar", "saved", "192.168.20.2", "admmsm", "msm-bus", debug=True)
+	#get_file("/home/admmsm/146200.tar", "saved", "192.168.20.2", "admmsm", "msm-bus", debug=True)
+	from globals_description import description
+	print description
 
 
 '''	d = DictDiffer(data2, data1)
